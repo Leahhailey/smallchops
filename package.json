@@ -1,0 +1,22 @@
+{
+  "name": "smallchops",
+  "version": "1.0.0",
+  "description": "smallchops project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lassbon/smallchops-api.git"
+  },
+  "author": "rosh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lassbon/smallchops-api/issues"
+  },
+  "homepage": "https://github.com/lassbon/smallchops-api#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
+}
