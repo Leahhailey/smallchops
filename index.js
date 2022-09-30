@@ -1,9 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const bodyParser = require('body-parser')
 const mysql = require('mysql2')
 const { v4: uuidv4 } = require('uuid')
 const app = express()
-const port = 5500
+const port = process.env.APP_PORT
 
 app.use(bodyParser.json())
 
@@ -15,11 +16,11 @@ app.listen(port, () => {
 
 // create the connection to database
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    port:'8889',
-    password: 'root',
-    database: 'smallchops'
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    port: process.env.DATABASE_PORT,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_NAME
 });
   
 
