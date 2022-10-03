@@ -7,6 +7,21 @@ const Joi = require('joi')
 const app = express()
 const port = process.env.APP_PORT
 
+
+try {
+
+
+
+    
+} catch (error) {
+    console.log(error.message)
+}
+
+
+
+
+
+
 app.use(bodyParser.json())
 
 app.listen(port, () => {
@@ -30,18 +45,18 @@ app.post('/create', (req, res) => {
 
 
     const schema = Joi.object({
-        firstname: Joi.string().min(4).max(30).required(),
+        firstname: Joi.string().min(4).max(30),
         othername: Joi.string().min(4).max(30).required(),
+        email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', ] } }).required(),
         phone: Joi.string().min(11).max(14).required(),
-        email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } })
     })
     
-    const { error, value } = schema.validate(req.body);
+    const { error, value }= schema.validate(req.body);
     
-    if (error != "undefined") {
-        
+    if (error != undefined) {
         res.status(400).send({
-            message: 'validation error'
+            status: false,
+            message:  error
         })
     }
 
@@ -52,45 +67,36 @@ app.post('/create', (req, res) => {
     //3. if email exist , return a message that email or phonne already exist
     //4. else create the customer
     try {
-        if (!firstname || !othername || !email || !phone) {
-            throw new Error ('All fields are required')
-       
-        }
-
+        
         connection.query(
             `select * from customers where email='${email}' or phone='${phone}'`,
             (err, results, fields) => {
-                 if (err) {
-                   console.log('errr: ', err)
-                    throw new Error ('Please check back, this is on us.')
+                if (err) {
+                    console.log("1: error: ", err)
+                     throw new Error('Please check back, this is on us.')
+    
                 }
-
-           
+         
                 if (results.length > 0) {
                     throw new Error ('The email/Phone exists.', 400)
                 }
 
 
                 //create the customer 
-                let customer_id = uuidv4()
                 connection.query(
                     `insert into customers(customer_id,firstname, othernames, phone, email)
-                 values('${customer_id}','${firstname}','${othername}','${phone}', '${email}' )`,
+                 values('${uuidv4()}','${firstname}','${othername}','${phone}', '${email}' )`,
                     (err, results, fields) => {
                         if (err) {
-                            // console.log("error: ", err.sqlMessage)
+                            console.log("2: error: ", err)
                             throw new Error("This is on us, pleae try later")
                         }
 
 
                         res.status(201).json({
+                            status:true,
                             message: "Account succesfully created",
-                            data: {
-                                firstname,
-                                othername,
-                                phone,
-                                email
-                            }
+                            data: req.body
                         })
                      
 
@@ -121,24 +127,50 @@ app.post('/create', (req, res) => {
 })
 
 
-
-
 //get user
 app.get('/user/:_id', (req, res) => { 
     
-    const { _id } = req.params
-    const user = users.find(x => x.id == _id)
-    
-    if (!user) {
-        res.status(404).send({
-            message: "user not found"
-        })
-    } 
-
-    res.status(200).send({
-        message: "user found",
-        data: user
+    const schema = Joi.object({
+        _id: Joi.string().required()
     })
+
+    const { error, value } = schema.validate(req.params)
+
+    if (error != undefined) {
+        res.status(400).send({
+            status: false,
+            message:  error.details[0].message
+        })
+    }
+
+    const { _id } = req.params
+    try {
+
+        connection.query(`select * from customers where customer_id='${_id}'`,
+            (err, results, fields) => {
+                if (err) {
+                    console.log("2: error: ", err)
+                    throw new Error("This is on us, pleae try later")
+                }
+    
+                delete results[0].sn
+
+                res.status(200).json({
+                    status:true,
+                    message: "Account succesfully fetched",
+                    data: results
+                })
+    
+            }
+        )
+       
+    } catch (e) {
+        res.status(400).send({
+            status: false,
+            message: e.message || "Something went wrong"
+        })
+    }
+    
    
     
 
@@ -147,13 +179,67 @@ app.get('/user/:_id', (req, res) => {
 //get all users
 app.get('/users', (req, res) => { 
 
-    res.status(200).send({
-        message: "All users",
-        data: users
+    connection.query(`select * from customers`,
+    (err, results, fields) => {
+        if (err) {
+            console.log("2: error: ", err)
+            throw new Error("This is on us, pleae try later")
+        }
+        const result_arr = results.map(item => delete item.sn)
+
+        res.status(200).json({
+            status:true,
+            message: "Account succesfully fetched",
+            data: results
+        })
+
     })
+    
 
 })
 
+
+//updarte
+app.put('/user/:_id', (req, res) => {
+
+    const schema = Joi.object({
+        firstname: Joi.string().min(5).required(),
+        othernames: Joi.string().min(5).required(),
+        address: Joi.string().required(),
+        gender: Joi.string().valid(0, 1, 2).required(),
+        dob: Joi.string().required(),
+    })
+
+    const { error, value } = schema.validate(req.body)
+
+    if (error != undefined) {
+        res.status(400).send({
+            status: false,
+            message:  error.details[0].message
+        })
+    }
+
+    const { _id } = req.params
+    const { body } = req
+        
+    connection.query(`update customers set firstname=${body.firstname}, othernames=${body.othernames},
+    address=${body.address}, gender=${body.gender}, dob=${body.dob} where customer_id='${customer_id}`,
+    (err, results, fields) => {
+        if (err) {
+            console.log("2: error: ", err)
+            throw new Error("This is on us, pleae try later")
+        }
+        const result_arr = results.map(item => delete item.sn)
+
+        res.status(200).json({
+            status:true,
+            message: "Account succesfully updated"
+        })
+
+    })
+
+
+})
 
 
 // connection.end()
