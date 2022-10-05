@@ -18,10 +18,6 @@ try {
 }
 
 
-
-
-
-
 app.use(bodyParser.json())
 
 app.listen(port, () => {
@@ -41,7 +37,7 @@ const connection = mysql.createConnection({
 
 
 //create user
-app.post('/create', (req, res) => { 
+app.post('/create', (req, res) => {  
 
 
     const schema = Joi.object({
@@ -125,7 +121,6 @@ app.post('/create', (req, res) => {
 
 
 })
-
 
 //get user
 app.get('/user/:_id', (req, res) => { 
